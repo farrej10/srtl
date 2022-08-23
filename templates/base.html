@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style/main.css">
+    <script async defer data-website-id="6079b92f-2658-4a99-a392-bf3ce6e800b9"
+        src="https://umami.james-farrell.com/umami.js"></script>
+    <title>SRTL</title>
+</head>
+
+<body>
+    <h1>Enjoy The Link 😊</h1>
+    <button contenteditable="true">{{.Short}}</button>
+</body>
+<script>
+    async function copyTargetText(e) {
+        try {
+            await navigator.clipboard.writeText("https://"+e.target.innerText);
+        } catch (err) {
+            console.error("Failed to copy: ", err);
+        }
+    }
+
+    document.querySelector("button").addEventListener("click", (e) => {
+        e.preventDefault();
+        copyTargetText(e);
+        const copyAlert = document.createElement("span");
+        copyAlert.innerText = `"${e.target.innerText}" copied to clipboard`;
+        document.body.appendChild(copyAlert);
+        setTimeout(() => {
+            document.body.removeChild(copyAlert);
+        }, 1500);
+    });
+</script>
+
+</html>
