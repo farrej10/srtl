@@ -148,6 +148,9 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	formLink := req.PostForm.Get("link")
+	if !strings.HasPrefix(formLink, "https://") && !strings.HasPrefix(formLink, "http://") {
+		formLink = "https://" + formLink
+	}
 	incomingUrl, err := url.ParseRequestURI(formLink)
 	if err != nil {
 		s.logger.Error("bad link")
