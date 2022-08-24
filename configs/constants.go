@@ -9,4 +9,6 @@ const (
 	ContentType     = "Content-Type"
 	ApplicationJson = "application/json"
 	ApplicationForm = "application/x-www-form-urlencoded"
+	Https           = "https://"
+	Http            = "http://"
 )

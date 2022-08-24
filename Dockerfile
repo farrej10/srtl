@@ -25,4 +25,4 @@ WORKDIR "/app"
 
 RUN go mod download
 
-RUN go build -tags builtin_static ./cmd/http
+RUN go build -tags builtin_static -o srtl ./cmd/http 

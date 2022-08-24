@@ -23,9 +23,13 @@ type (
 		logger zap.SugaredLogger
 		db     *grocksdb.DB
 		tmpl   *template.Template
+		host   string
+		port   string
 	}
 	Config struct {
 		Logger zap.SugaredLogger
+		Host   string
+		Port   string
 	}
 )
 
@@ -45,7 +49,7 @@ func NewShortener(config Config) (shortener, error) {
 	if err != nil {
 		return shortener{}, err
 	}
-	return shortener{logger: config.Logger, db: db, tmpl: tmpl}, err
+	return shortener{logger: config.Logger, db: db, tmpl: tmpl, host: config.Host, port: config.Port}, err
 }
 
 func (s shortener) ShortenLink(rw http.ResponseWriter, req *http.Request) {
@@ -148,8 +152,8 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	formLink := req.PostForm.Get("link")
-	if !strings.HasPrefix(formLink, "https://") && !strings.HasPrefix(formLink, "http://") {
-		formLink = "https://" + formLink
+	if !strings.HasPrefix(formLink, configs.Https) && !strings.HasPrefix(formLink, configs.Http) {
+		formLink = configs.Https + formLink
 	}
 	incomingUrl, err := url.ParseRequestURI(formLink)
 	if err != nil {
@@ -165,7 +169,7 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	short := "localhost:8080/l/" + string(key)
+	short := s.host + s.port + "/l/" + string(key)
 	data := models.ResponseBody{
 		Link:  string(link),
 		Short: short,
@@ -203,7 +207,7 @@ func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	short := "localhost:8080/l/" + string(key)
+	short := s.host + s.port + "/l/" + string(key)
 	data := models.ResponseBody{
 		Link:  string(link),
 		Short: short,

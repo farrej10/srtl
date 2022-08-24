@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/farrej10/srtl/internal/shortener"
@@ -20,12 +21,17 @@ func init() {
 
 func main() {
 	sugar.Info("Starting Shortener")
-	s, err := shortener.NewShortener(shortener.Config{Logger: *sugar})
+	port := os.Getenv("PORT")
+	host := os.Getenv("HOST")
+	if port == "" || host == "" {
+		panic("port or host variables not found")
+	}
+	s, err := shortener.NewShortener(shortener.Config{Logger: *sugar, Host: host, Port: port})
 	if err != nil {
 		panic(err)
 	}
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 	http.HandleFunc("/l/", s.ShortenLink)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":"+port, nil)
 }
