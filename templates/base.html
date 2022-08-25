@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style/main.css">
     <script async defer data-website-id="6079b92f-2658-4a99-a392-bf3ce6e800b9"
-        src="https://umami.james-farrell.com/umami.js"></script>
+        src="https://umami.srtl.ie/l.js"></script>
     <title>SRTL</title>
 </head>
 
@@ -18,7 +18,7 @@
 <script>
     async function copyTargetText(e) {
         try {
-            await navigator.clipboard.writeText("https://"+e.target.innerText);
+            await navigator.clipboard.writeText("https://" + e.target.innerText);
         } catch (err) {
             console.error("Failed to copy: ", err);
         }

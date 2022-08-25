@@ -169,7 +169,7 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	short := s.host + s.port + "/l/" + string(key)
+	short := s.host + "/l/" + string(key)
 	data := models.ResponseBody{
 		Link:  string(link),
 		Short: short,
@@ -207,7 +207,7 @@ func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	short := s.host + s.port + "/l/" + string(key)
+	short := s.host + "/l/" + string(key)
 	data := models.ResponseBody{
 		Link:  string(link),
 		Short: short,
