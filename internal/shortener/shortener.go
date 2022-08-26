@@ -63,8 +63,10 @@ func (s shortener) ShortenLink(rw http.ResponseWriter, req *http.Request) {
 
 // redirects to url if found otherwise return root
 func (s shortener) redirect(rw http.ResponseWriter, req *http.Request) {
-	key := strings.TrimLeft(req.URL.Path, "/l/")
-	if s.validate(key) {
+	key := strings.TrimLeft(req.URL.Path, "/")
+	if key == "" {
+		http.Redirect(rw, req, configs.Home, http.StatusFound)
+	} else if s.validate(key) {
 		val, err := s.db.Get(grocksdb.NewDefaultReadOptions(), []byte(key))
 		defer val.Free()
 		if err != nil {
@@ -169,7 +171,7 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	short := s.host + "/l/" + string(key)
+	short := s.host + "/" + string(key)
 	data := models.ResponseBody{
 		Link:  string(link),
 		Short: short,
@@ -207,7 +209,7 @@ func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	short := s.host + "/l/" + string(key)
+	short := configs.Https + s.host + "/" + string(key)
 	data := models.ResponseBody{
 		Link:  string(link),
 		Short: short,

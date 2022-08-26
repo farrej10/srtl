@@ -3,3 +3,4 @@ db/
 .vscode
 build/
 release.tar.gz
+srtl

@@ -20,9 +20,9 @@ func init() {
 }
 
 func main() {
-	sugar.Info("Starting Shortener")
 	port := os.Getenv("PORT")
 	host := os.Getenv("HOST")
+	sugar.Infof("Starting Shortener on Host: %s", host)
 	if port == "" || host == "" {
 		panic("port or host variables not found")
 	}
@@ -30,8 +30,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/", fs)
-	http.HandleFunc("/l/", s.ShortenLink)
+	http.HandleFunc("/", s.ShortenLink)
 	http.ListenAndServe(":"+port, nil)
 }
