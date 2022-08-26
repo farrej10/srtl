@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/farrej10/srtl/configs"
 	"github.com/farrej10/srtl/internal/shortener"
 	"go.uber.org/zap"
 )
@@ -26,7 +27,11 @@ func main() {
 	if port == "" || host == "" {
 		panic("port or host variables not found")
 	}
-	s, err := shortener.NewShortener(shortener.Config{Logger: *sugar, Host: host, Port: port})
+	s, err := shortener.NewShortener(shortener.Config{
+		Logger: *sugar,
+		Host:   host,
+		Port:   port,
+		Home:   configs.Https + "www." + host + "/"})
 	if err != nil {
 		panic(err)
 	}

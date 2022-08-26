@@ -25,11 +25,13 @@ type (
 		tmpl   *template.Template
 		host   string
 		port   string
+		home   string
 	}
 	Config struct {
 		Logger zap.SugaredLogger
 		Host   string
 		Port   string
+		Home   string
 	}
 )
 
@@ -49,7 +51,7 @@ func NewShortener(config Config) (shortener, error) {
 	if err != nil {
 		return shortener{}, err
 	}
-	return shortener{logger: config.Logger, db: db, tmpl: tmpl, host: config.Host, port: config.Port}, err
+	return shortener{logger: config.Logger, db: db, tmpl: tmpl, host: config.Host, port: config.Port, home: config.Home}, err
 }
 
 func (s shortener) ShortenLink(rw http.ResponseWriter, req *http.Request) {
@@ -65,23 +67,23 @@ func (s shortener) ShortenLink(rw http.ResponseWriter, req *http.Request) {
 func (s shortener) redirect(rw http.ResponseWriter, req *http.Request) {
 	key := strings.TrimLeft(req.URL.Path, "/")
 	if key == "" {
-		http.Redirect(rw, req, configs.Home, http.StatusFound)
+		http.Redirect(rw, req, s.home, http.StatusFound)
 	} else if s.validate(key) {
 		val, err := s.db.Get(grocksdb.NewDefaultReadOptions(), []byte(key))
 		defer val.Free()
 		if err != nil {
 			s.logger.Error("error during get from rockdb")
-			http.Redirect(rw, req, configs.Home, http.StatusFound)
+			http.Redirect(rw, req, s.home, http.StatusFound)
 		} else if !val.Exists() {
 			s.logger.Warnf("key not found %s", key)
-			http.Redirect(rw, req, configs.Home, http.StatusFound)
+			http.Redirect(rw, req, s.home, http.StatusFound)
 		} else {
 			s.logger.Debugf("key found")
 			http.Redirect(rw, req, string(val.Data()), http.StatusFound)
 		}
 	} else {
 		s.logger.Debugf("invalid path %s", req.URL.Path)
-		http.Redirect(rw, req, configs.Home, http.StatusFound)
+		http.Redirect(rw, req, s.home, http.StatusFound)
 	}
 }
 
