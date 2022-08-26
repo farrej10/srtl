@@ -154,17 +154,20 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	formLink := req.PostForm.Get("link")
+	s.logger.Debugf("formLink: %s", formLink)
 	if !strings.HasPrefix(formLink, configs.Https) && !strings.HasPrefix(formLink, configs.Http) {
 		formLink = configs.Https + formLink
 	}
+	formLink = strings.Split(formLink, "#")[0]
 	incomingUrl, err := url.ParseRequestURI(formLink)
+	s.logger.Debugf("incomingUrl: %s", incomingUrl)
 	if err != nil {
 		s.logger.Error("bad link")
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 	link := incomingUrl.String()
-	s.logger.Debugf("key: %s,value: %s", string(key), string(link))
+	s.logger.Debugf("key: %s,value: %s", string(key), link)
 	err = s.db.Put(grocksdb.NewDefaultWriteOptions(), key, []byte(link))
 	if err != nil {
 		s.logger.Error("error during setting rockdb")
@@ -173,7 +176,7 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 	}
 	short := s.host + "/" + string(key)
 	data := models.ResponseBody{
-		Link:  string(link),
+		Link:  link,
 		Short: short,
 	}
 	s.tmpl.Execute(rw, data)
@@ -202,7 +205,7 @@ func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	link := incomingUrl.String()
-	s.logger.Debugf("key: %s,value: %s", string(key), string(link))
+	s.logger.Debugf("key: %s,value: %s", string(key), link)
 	err = s.db.Put(grocksdb.NewDefaultWriteOptions(), key, []byte(link))
 	if err != nil {
 		s.logger.Error("error during setting rockdb")
@@ -211,7 +214,7 @@ func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 	}
 	short := configs.Https + s.host + "/" + string(key)
 	data := models.ResponseBody{
-		Link:  string(link),
+		Link:  link,
 		Short: short,
 	}
 	rw.Header().Set(configs.ContentType, configs.ApplicationJson)

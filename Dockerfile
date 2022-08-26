@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 
-COPY . /app
+COPY install.sh /app/install.sh
 
 RUN apt update && apt install -y \
  build-essential \
@@ -20,6 +20,8 @@ RUN apt install -y libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev 
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+
+COPY . /app
 
 WORKDIR "/app" 
 
