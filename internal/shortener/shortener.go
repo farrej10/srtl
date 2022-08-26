@@ -113,6 +113,7 @@ func (s shortener) validate(path string) bool {
 	return true
 }
 
+// creates a key of len maxlen make up of the set of runes
 func createKey() []byte {
 	b := make([]byte, configs.MaxPathLen)
 	for i := range b {
@@ -121,6 +122,7 @@ func createKey() []byte {
 	return b
 }
 
+// gets a key that is not already in use
 func (s shortener) getKey() ([]byte, error) {
 	key := createKey()
 
@@ -142,6 +144,7 @@ func (s shortener) getKey() ([]byte, error) {
 	return key, nil
 }
 
+// when getting data from a form it will redirect user to page rather than returning raw data
 func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 	key, err := s.getKey()
 	if err != nil {
@@ -184,6 +187,7 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 	s.tmpl.Execute(rw, data)
 }
 
+// json queries will return json
 func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 	key, err := s.getKey()
 	if err != nil {
@@ -199,7 +203,9 @@ func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
-	incomingUrl, err := url.ParseRequestURI(incoming.Link)
+
+	// drop fragment if sent
+	incomingUrl, err := url.ParseRequestURI(strings.Split(incoming.Link, "#")[0])
 	// validate uri
 	if err != nil {
 		s.logger.Error("bad link")
