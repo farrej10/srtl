@@ -9,4 +9,4 @@ If you have the required libraries installed you can run `go mod download` to do
 
 ## Try it
 
-[It's live]("https://www.srtl.ie") so you can mess around with it
+[It's live](https://www.srtl.ie) so you can mess around with it
