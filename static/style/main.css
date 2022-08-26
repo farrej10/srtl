@@ -43,6 +43,10 @@ button:active {
     transform: skew(-2deg) rotate(2deg);
 }
 
+form {
+    text-align: center;
+}
+
 .input_box {
     cursor: pointer;
     min-width: 0;

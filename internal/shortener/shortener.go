@@ -43,7 +43,7 @@ func NewShortener(config Config) (shortener, error) {
 	opts.SetBlockBasedTableFactory(bbto)
 	opts.SetCreateIfMissing(true)
 
-	db, err := grocksdb.OpenDb(opts, "./db")
+	db, err := grocksdb.OpenDbWithTTL(opts, "./db", 86400)
 	if err != nil {
 		return shortener{}, err
 	}
