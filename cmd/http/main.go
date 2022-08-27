@@ -12,22 +12,21 @@ import (
 )
 
 var sugar *zap.SugaredLogger
+var short shortener.IShortener
+var port string
 
 func init() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync() // flushes buffer, if any
 	sugar = logger.Sugar()
 	rand.Seed(time.Now().UnixNano())
-}
-
-func main() {
-	port := os.Getenv("PORT")
+	port = os.Getenv("PORT")
 	host := os.Getenv("HOST")
-	sugar.Infof("Starting Shortener on Host: %s", host)
 	if port == "" || host == "" {
 		panic("port or host variables not found")
 	}
-	s, err := shortener.NewShortener(shortener.Config{
+	var err error
+	short, err = shortener.NewShortener(shortener.Config{
 		Logger: *sugar,
 		Host:   host,
 		Port:   port,
@@ -35,6 +34,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	http.HandleFunc("/", s.ShortenLink)
+}
+
+func main() {
+	sugar.Info("Starting Shortener")
+	http.HandleFunc("/", short.ShortenLink)
 	http.ListenAndServe(":"+port, nil)
 }

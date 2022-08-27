@@ -9,8 +9,9 @@ import (
 	"strings"
 
 	"github.com/farrej10/srtl/configs"
+	"github.com/farrej10/srtl/internal/adapters"
 	"github.com/farrej10/srtl/internal/models"
-	"github.com/linxGnu/grocksdb"
+	"github.com/farrej10/srtl/internal/ports"
 	"go.uber.org/zap"
 )
 
@@ -21,7 +22,7 @@ type IShortener interface {
 type (
 	shortener struct {
 		logger zap.SugaredLogger
-		db     *grocksdb.DB
+		db     ports.IDatabaseAccessor
 		tmpl   *template.Template
 		host   string
 		port   string
@@ -36,14 +37,7 @@ type (
 )
 
 func NewShortener(config Config) (shortener, error) {
-	bbto := grocksdb.NewDefaultBlockBasedTableOptions()
-	bbto.SetBlockCache(grocksdb.NewLRUCache(3 << 30))
-
-	opts := grocksdb.NewDefaultOptions()
-	opts.SetBlockBasedTableFactory(bbto)
-	opts.SetCreateIfMissing(true)
-
-	db, err := grocksdb.OpenDbWithTTL(opts, "./db", 86400)
+	db, err := adapters.NewRocksDB("./db", 86400, config.Logger)
 	if err != nil {
 		return shortener{}, err
 	}
@@ -66,20 +60,17 @@ func (s shortener) ShortenLink(rw http.ResponseWriter, req *http.Request) {
 // redirects to url if found otherwise return root
 func (s shortener) redirect(rw http.ResponseWriter, req *http.Request) {
 	key := strings.TrimLeft(req.URL.Path, "/")
+	s.logger.Debugw("redirct hit", "path", key)
 	if key == "" {
 		http.Redirect(rw, req, s.home, http.StatusFound)
 	} else if s.validate(key) {
-		val, err := s.db.Get(grocksdb.NewDefaultReadOptions(), []byte(key))
-		defer val.Free()
+		val, err := s.db.Get([]byte(key))
 		if err != nil {
 			s.logger.Error("error during get from rockdb")
 			http.Redirect(rw, req, s.home, http.StatusFound)
-		} else if !val.Exists() {
-			s.logger.Warnf("key not found %s", key)
-			http.Redirect(rw, req, s.home, http.StatusFound)
 		} else {
-			s.logger.Debugf("key found")
-			http.Redirect(rw, req, string(val.Data()), http.StatusFound)
+			s.logger.Debugw("key found", "key", key, "value", string(val))
+			http.Redirect(rw, req, string(val), http.StatusFound)
 		}
 	} else {
 		s.logger.Debugf("invalid path %s", req.URL.Path)
@@ -126,17 +117,17 @@ func createKey() []byte {
 func (s shortener) getKey() ([]byte, error) {
 	key := createKey()
 
-	value, err := s.db.Get(grocksdb.NewDefaultReadOptions(), key)
-	defer value.Free()
-	if err != nil {
+	_, err := s.db.Get(key)
+	if err != nil && err.Error() != "key not found" {
 		s.logger.Error("error during get from rockdb")
 		return nil, err
 	}
 	// create random key until its not already taken
-	for value.Exists() {
+	for err.Error() != "key not found" {
+		s.logger.Warn(err)
 		key = createKey()
-		value, err = s.db.Get(grocksdb.NewDefaultReadOptions(), key)
-		if err != nil {
+		_, err = s.db.Get(key)
+		if err != nil && err.Error() != "key not found" {
 			s.logger.Error("error during get from rockdb")
 			return nil, err
 		}
@@ -173,7 +164,7 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 	}
 	link := incomingUrl.String()
 	s.logger.Debugf("key: %s,value: %s", string(key), link)
-	err = s.db.Put(grocksdb.NewDefaultWriteOptions(), key, []byte(link))
+	err = s.db.Set(key, []byte(link))
 	if err != nil {
 		s.logger.Error("error during setting rockdb")
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
@@ -214,7 +205,7 @@ func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 	}
 	link := incomingUrl.String()
 	s.logger.Debugf("key: %s,value: %s", string(key), link)
-	err = s.db.Put(grocksdb.NewDefaultWriteOptions(), key, []byte(link))
+	err = s.db.Set(key, []byte(link))
 	if err != nil {
 		s.logger.Error("error during setting rockdb")
 		http.Error(rw, err.Error(), http.StatusInternalServerError)

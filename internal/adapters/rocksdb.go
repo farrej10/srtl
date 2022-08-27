@@ -5,14 +5,16 @@ import (
 
 	"github.com/farrej10/srtl/internal/ports"
 	"github.com/linxGnu/grocksdb"
+	"go.uber.org/zap"
 )
 
 type rocksDb struct {
-	db *grocksdb.DB
+	db     *grocksdb.DB
+	logger zap.SugaredLogger
 }
 
 // create rocksdb with some defaults
-func NewRocksDB(location string, ttl int) (ports.IDatabaseAccessor, error) {
+func NewRocksDB(location string, ttl int, logger zap.SugaredLogger) (ports.IDatabaseAccessor, error) {
 	bbto := grocksdb.NewDefaultBlockBasedTableOptions()
 	bbto.SetBlockCache(grocksdb.NewLRUCache(3 << 30))
 
@@ -23,7 +25,7 @@ func NewRocksDB(location string, ttl int) (ports.IDatabaseAccessor, error) {
 	if err != nil {
 		return rocksDb{}, err
 	}
-	return rocksDb{db: db}, nil
+	return rocksDb{db: db, logger: logger}, nil
 }
 
 func (r rocksDb) Get(key []byte) ([]byte, error) {
@@ -35,11 +37,13 @@ func (r rocksDb) Get(key []byte) ([]byte, error) {
 	if !val.Exists() {
 		return nil, errors.New("key not found")
 	}
-	var returnVal []byte
+	returnVal := make([]byte, len(val.Data()))
 	copy(returnVal, val.Data())
+	r.logger.Debugw("Get", "returnVal", string(returnVal), "value", string(val.Data()))
 	return returnVal, nil
 }
 
 func (r rocksDb) Set(key []byte, value []byte) error {
+	r.logger.Debugw("Set", "key", string(key), "value", string(value))
 	return r.db.Put(grocksdb.NewDefaultWriteOptions(), key, value)
 }
