@@ -4,3 +4,4 @@ db/
 build/
 release.tar.gz
 srtl
+dbPebble/

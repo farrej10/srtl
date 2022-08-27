@@ -37,7 +37,9 @@ type (
 )
 
 func NewShortener(config Config) (shortener, error) {
-	db, err := adapters.NewRocksDB("./db", 86400, config.Logger)
+	// db, err := adapters.NewRocksDB("./db", 86400, config.Logger)
+	db, err := adapters.NewPebbleDb("./dbPebble", config.Logger)
+
 	if err != nil {
 		return shortener{}, err
 	}
@@ -66,7 +68,7 @@ func (s shortener) redirect(rw http.ResponseWriter, req *http.Request) {
 	} else if s.validate(key) {
 		val, err := s.db.Get([]byte(key))
 		if err != nil {
-			s.logger.Error("error during get from rockdb")
+			s.logger.Error("error during get from db")
 			http.Redirect(rw, req, s.home, http.StatusFound)
 		} else {
 			s.logger.Debugw("key found", "key", key, "value", string(val))
@@ -119,7 +121,7 @@ func (s shortener) getKey() ([]byte, error) {
 
 	_, err := s.db.Get(key)
 	if err != nil && err.Error() != "key not found" {
-		s.logger.Error("error during get from rockdb")
+		s.logger.Error("error during get from db")
 		return nil, err
 	}
 	// create random key until its not already taken
@@ -128,7 +130,7 @@ func (s shortener) getKey() ([]byte, error) {
 		key = createKey()
 		_, err = s.db.Get(key)
 		if err != nil && err.Error() != "key not found" {
-			s.logger.Error("error during get from rockdb")
+			s.logger.Error("error during get from db")
 			return nil, err
 		}
 	}
@@ -166,7 +168,7 @@ func (s shortener) handleFromForm(rw http.ResponseWriter, req *http.Request) {
 	s.logger.Debugf("key: %s,value: %s", string(key), link)
 	err = s.db.Set(key, []byte(link))
 	if err != nil {
-		s.logger.Error("error during setting rockdb")
+		s.logger.Error("error during setting db")
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -207,7 +209,7 @@ func (s shortener) handleFromJson(rw http.ResponseWriter, req *http.Request) {
 	s.logger.Debugf("key: %s,value: %s", string(key), link)
 	err = s.db.Set(key, []byte(link))
 	if err != nil {
-		s.logger.Error("error during setting rockdb")
+		s.logger.Error("error during setting db")
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
