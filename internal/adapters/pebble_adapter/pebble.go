@@ -1,4 +1,4 @@
-package adapters
+package pebbleadapter
 
 import (
 	"errors"
@@ -10,15 +10,15 @@ import (
 
 type pebbleDb struct {
 	db     *pebble.DB
-	logger zap.SugaredLogger
+	logger *zap.SugaredLogger
 }
 
-func NewPebbleDb(location string, logger zap.SugaredLogger) (ports.IDatabaseAccessor, error) {
+func NewPebbleDb(location string, logger *zap.SugaredLogger) (ports.IDatabaseAccessor, error) {
 	db, err := pebble.Open(location, &pebble.Options{})
 	if err != nil {
-		return pebbleDb{}, err
+		return &pebbleDb{}, err
 	}
-	return pebbleDb{db: db, logger: logger}, nil
+	return &pebbleDb{db: db, logger: logger}, nil
 }
 
 func (p pebbleDb) Get(key []byte) ([]byte, error) {
@@ -38,5 +38,9 @@ func (p pebbleDb) Get(key []byte) ([]byte, error) {
 
 func (p pebbleDb) Set(key []byte, value []byte) error {
 	p.logger.Debugw("Set", "key", string(key), "value", string(value))
-	return p.db.Set(key, value, pebble.Sync)
+	return p.db.Set(key, value, pebble.NoSync)
+}
+
+func (p pebbleDb) Close() error {
+	return p.db.Close()
 }

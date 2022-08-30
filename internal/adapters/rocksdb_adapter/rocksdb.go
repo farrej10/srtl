@@ -1,4 +1,4 @@
-package adapters
+package rocksdbadapter
 
 import (
 	"errors"
@@ -10,11 +10,11 @@ import (
 
 type rocksDb struct {
 	db     *grocksdb.DB
-	logger zap.SugaredLogger
+	logger *zap.SugaredLogger
 }
 
 // create rocksdb with some defaults
-func NewRocksDB(location string, ttl int, logger zap.SugaredLogger) (ports.IDatabaseAccessor, error) {
+func NewRocksDB(location string, ttl int, logger *zap.SugaredLogger) (ports.IDatabaseAccessor, error) {
 	bbto := grocksdb.NewDefaultBlockBasedTableOptions()
 	bbto.SetBlockCache(grocksdb.NewLRUCache(3 << 30))
 
@@ -46,4 +46,9 @@ func (r rocksDb) Get(key []byte) ([]byte, error) {
 func (r rocksDb) Set(key []byte, value []byte) error {
 	r.logger.Debugw("Set", "key", string(key), "value", string(value))
 	return r.db.Put(grocksdb.NewDefaultWriteOptions(), key, value)
+}
+
+func (r rocksDb) Close() error {
+	r.db.Close()
+	return nil
 }

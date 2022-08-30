@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/farrej10/srtl/configs"
-	"github.com/farrej10/srtl/internal/adapters"
 	"github.com/farrej10/srtl/internal/models"
 	"github.com/farrej10/srtl/internal/ports"
 	"go.uber.org/zap"
@@ -21,7 +20,7 @@ type IShortener interface {
 
 type (
 	shortener struct {
-		logger zap.SugaredLogger
+		logger *zap.SugaredLogger
 		db     ports.IDatabaseAccessor
 		tmpl   *template.Template
 		host   string
@@ -29,25 +28,20 @@ type (
 		home   string
 	}
 	Config struct {
-		Logger zap.SugaredLogger
+		Logger *zap.SugaredLogger
 		Host   string
 		Port   string
 		Home   string
+		Db     ports.IDatabaseAccessor
 	}
 )
 
 func NewShortener(config Config) (shortener, error) {
-	// db, err := adapters.NewRocksDB("./db", 86400, config.Logger)
-	db, err := adapters.NewPebbleDb("./dbPebble", config.Logger)
-
-	if err != nil {
-		return shortener{}, err
-	}
 	tmpl, err := template.ParseFiles("./templates/base.html")
 	if err != nil {
 		return shortener{}, err
 	}
-	return shortener{logger: config.Logger, db: db, tmpl: tmpl, host: config.Host, port: config.Port, home: config.Home}, err
+	return shortener{logger: config.Logger, db: config.Db, tmpl: tmpl, host: config.Host, port: config.Port, home: config.Home}, err
 }
 
 func (s shortener) ShortenLink(rw http.ResponseWriter, req *http.Request) {
@@ -66,6 +60,7 @@ func (s shortener) redirect(rw http.ResponseWriter, req *http.Request) {
 	if key == "" {
 		http.Redirect(rw, req, s.home, http.StatusFound)
 	} else if s.validate(key) {
+
 		val, err := s.db.Get([]byte(key))
 		if err != nil {
 			s.logger.Error("error during get from db")
