@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/farrej10/srtl/configs"
-	pebbleadapter "github.com/farrej10/srtl/internal/adapters/pebble_adapter"
+	redisadapter "github.com/farrej10/srtl/internal/adapters/redis_adapter"
 	"github.com/farrej10/srtl/internal/ports"
 	"github.com/farrej10/srtl/internal/shortener"
+
 	"go.uber.org/zap"
 )
 
@@ -29,7 +30,8 @@ func init() {
 		panic("port or host variables not found")
 	}
 	var err error
-	db, err = pebbleadapter.NewPebbleDb("./dbPebble", sugar)
+	// db, err = pebbleadapter.NewPebbleDb("./dbPebble", sugar)
+	db, err = redisadapter.NewRedisDb("192.168.0.140", "6379")
 	if err != nil {
 		panic(err)
 	}
